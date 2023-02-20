@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+# commit
+
 # parameters
 mu = 0/10000                    # bps
 sig = 0.006                     # volatility % p.a. np.sqrt(252)
