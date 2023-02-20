@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# commit
+# commitaaaa
 
 # parameters
 mu = 0/10000                    # bps
