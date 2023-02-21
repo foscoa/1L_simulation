@@ -17,6 +17,10 @@ AUM_1L = notional*n_funds       # 1L AUM
 managers_PNL = pd.DataFrame(np.zeros(n_funds)).transpose()
 managers_PNL.columns = ["fund " + str(x+1) for x in range(n_funds)]
 
+# initialize managers returns
+managers_ret = pd.DataFrame(np.zeros(n_funds)).transpose()
+managers_ret.columns = ["fund " + str(x+1) for x in range(n_funds)]
+
 # initialize managers notionals
 managers_not = pd.DataFrame(np.ones(n_funds)*notional).transpose()
 managers_not.columns = ["fund " + str(x+1) for x in range(n_funds)]
@@ -66,10 +70,14 @@ def updateNotional(fund_returns, managers_not):
 
     return pd.concat([managers_not, append_not])
 
+# simulation loop
 for i in range(n_months):
 
     # generate daily returns
     fund_returns = generateDailyReturns(mu, sig, n_days, n_funds, max_DD)
+
+    # append new returns
+    managers_ret = pd.concat([managers_ret, fund_returns.diff()[1:]])
 
     # append new daily pnl
     pnl = pd.DataFrame(np.multiply(fund_returns.diff()[1:].values, managers_not[-1:].values))
@@ -84,6 +92,7 @@ for i in range(n_months):
 # reindexing
 managers_not.index = range(n_months+1)
 managers_PNL.index = range(n_days*n_months+1)
+managers_ret.index = range(n_days*n_months+1)
 managers_cum_PNL = managers_PNL.cumsum()
 
 
