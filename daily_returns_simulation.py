@@ -2,8 +2,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# commitaaaa
-
 # parameters
 mu = 0/10000                    # bps
 sig = 0.006                     # volatility % p.a. np.sqrt(252)
@@ -18,9 +16,6 @@ AUM_1L = notional*n_funds       # 1L AUM
 # initialize managers PNL
 managers_PNL = pd.DataFrame(np.zeros(n_funds)).transpose()
 managers_PNL.columns = ["fund " + str(x+1) for x in range(n_funds)]
-
-managers_PNL_monthly = pd.DataFrame(np.zeros(n_funds)).transpose()
-managers_PNL_monthly.columns = ["fund " + str(x+1) for x in range(n_funds)]
 
 # initialize managers notionals
 managers_not = pd.DataFrame(np.ones(n_funds)*notional).transpose()
@@ -55,6 +50,22 @@ def generateDailyReturns(mu, sig, n_days, n_funds, max_DD):
 
     return fund_returns
 
+def updateNotional(fund_returns, managers_not):
+    # notional reduction
+    monthly_loss = fund_returns[-1:].values-1
+    monthly_loss[monthly_loss > 0] = 0
+    append_not = np.multiply((1 + monthly_loss * 10), managers_not[-1:]) # reduce notional by x10 loss
+
+    # notional refill
+    monthly_gain = fund_returns[-1:].values-1
+    monthly_gain[monthly_gain <= 0] = 0
+    append_not = np.multiply((1 + monthly_gain * 10), append_not)
+
+    # max notional at initial level
+    append_not[append_not > notional] = notional
+
+    return pd.concat([managers_not, append_not])
+
 for i in range(n_months):
 
     # generate daily returns
@@ -65,29 +76,8 @@ for i in range(n_months):
     pnl.columns = ["fund " + str(x + 1) for x in range(n_funds)]
     managers_PNL = pd.concat([managers_PNL, pnl])
 
-    # append monthly PNL
-    pnl_m = pd.DataFrame(np.multiply((fund_returns[-1:]-1).values, managers_not[-1:].values))
-    pnl_m.columns = ["fund " + str(x + 1) for x in range(n_funds)]
-    managers_PNL_monthly = pd.concat([managers_PNL_monthly, pnl_m])
-
-    # notional reduction
-    monthly_loss = fund_returns[-1:].values-1
-    monthly_loss[monthly_loss > 0] = 0
-    append_not = np.multiply((1 + monthly_loss * 10), managers_not[-1:])
-
-    # notional refill
-    monthly_gain = fund_returns[-1:].values-1
-    monthly_gain[monthly_gain <= 0] = 0
-    append_not = np.multiply((1 + monthly_gain * 10), append_not)
-
-    # max notional at initial level
-    append_not[append_not > notional] = notional
-
     # append new notionals
-    managers_not = pd.concat([managers_not, append_not])
-
-
-
+    managers_not = updateNotional(fund_returns, managers_not)
 
     # fund_returns.plot()
 
