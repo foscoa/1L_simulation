@@ -1,13 +1,14 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+pd.options.plotting.backend = "plotly"
 
 # parameters
-mu = 0/10000                    # bps
+mu = 4/(12*10000)                    # bps
 sig = 0.006                     # volatility % p.a. np.sqrt(252)
 n_days = 25                     # number of days
 n_months = 12                   # number of months
-n_funds = 10                    # number of funds
+n_funds = 15                    # number of funds
 max_DD = 0.08                   # number of funds
 notional = 10**6                # notional for each manager
 AUM_1L = notional*n_funds       # 1L AUM
@@ -100,8 +101,10 @@ for i in range(n_months):
 
 
 # initialize 1L PNL
-pnl_monthly_1L = pd.DataFrame(pnl_monthly_1L)
-pnl_monthly_1L.columns = ["1L_pnl"]
+pnl_monthly_1L = pd.DataFrame(pnl_monthly_1L, columns = ["1L_pnl"])
+pnl_monthly_1L = pd.concat([pd.DataFrame(data={"1L_pnl":0}, index=[0]), pnl_monthly_1L])
+pnl_monthly_1L.index = [0] + [(i+1)*n_days for i in range(n_months)]
+pnl_monthly_1L_cum = pnl_monthly_1L.cumsum()
 
 # reindexing
 managers_not.index = range(n_months+1)
@@ -109,5 +112,9 @@ managers_PNL.index = range(n_days*n_months+1)
 managers_ret.index = range(n_days*n_months+1)
 managers_cum_PNL = managers_PNL.cumsum()
 
-managers_cum_PNL.plot()
+df_toplot = managers_cum_PNL.join(pnl_monthly_1L_cum)
+df_toplot = df_toplot.fillna(method='ffill')
+
+fig = df_toplot.plot.line()
+fig.show()
 print(pnl_monthly_1L)
