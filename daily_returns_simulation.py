@@ -4,14 +4,15 @@ import matplotlib.pyplot as plt
 pd.options.plotting.backend = "plotly"
 
 # parameters
-mu = 4/(12*10000)                    # bps
-sig = 0.006                     # volatility % p.a. np.sqrt(252)
+mu = 0.05/252             # bps
+sig = 0.10/np.sqrt(252)         # volatility % p.a. np.sqrt(252)
 n_days = 25                     # number of days
 n_months = 12                   # number of months
-n_funds = 15                    # number of funds
+n_funds = 50                    # number of funds
 max_DD = 0.08                   # number of funds
 notional = 10**6                # notional for each manager
-AUM_1L = notional*n_funds       # 1L AUM
+AUM_1L = notional       # 1L AUM
+lev = 10                         # leverage
 
 
 # initialize managers PNL
@@ -23,7 +24,7 @@ managers_ret = pd.DataFrame(np.zeros(n_funds)).transpose()
 managers_ret.columns = ["fund " + str(x+1) for x in range(n_funds)]
 
 # initialize managers notionals
-managers_not = pd.DataFrame(np.ones(n_funds)*notional).transpose()
+managers_not = pd.DataFrame(np.ones(n_funds)*notional*lev).transpose()
 managers_not.columns = ["fund " + str(x+1) for x in range(n_funds)]
 
 # initialize 1L PNL
@@ -69,7 +70,7 @@ def updateNotional(fund_returns, managers_not):
     append_not = np.multiply((1 + monthly_gain * 10), append_not)
 
     # max notional at initial level
-    append_not[append_not > notional] = notional
+    append_not[append_not > notional*lev] = notional*lev
 
     return pd.concat([managers_not, append_not])
 
@@ -118,3 +119,4 @@ df_toplot = df_toplot.fillna(method='ffill')
 fig = df_toplot.plot.line()
 fig.show()
 print(pnl_monthly_1L)
+print((pnl_monthly_1L/AUM_1L)*100)
