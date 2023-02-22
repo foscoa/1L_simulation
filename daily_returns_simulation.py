@@ -25,6 +25,8 @@ managers_ret.columns = ["fund " + str(x+1) for x in range(n_funds)]
 managers_not = pd.DataFrame(np.ones(n_funds)*notional).transpose()
 managers_not.columns = ["fund " + str(x+1) for x in range(n_funds)]
 
+# initialize 1L PNL
+pnl_monthly_1L = list()
 
 # generate simulated daily returns
 def generateDailyReturns(mu, sig, n_days, n_funds, max_DD):
@@ -87,7 +89,19 @@ for i in range(n_months):
     # append new notionals
     managers_not = updateNotional(fund_returns, managers_not)
 
+    pnl_1L = pnl[-1:].values - (managers_not[:1].values - managers_not[-1:].values)
+    pnl_1L = pd.DataFrame(pnl_1L).fillna(0)
+    pnl_1L[pnl_1L < 0] = 0
+    pnl_monthly_1L.append(pnl_1L.sum().sum())
+
+
     # fund_returns.plot()
+
+
+
+# initialize 1L PNL
+pnl_monthly_1L = pd.DataFrame(pnl_monthly_1L)
+pnl_monthly_1L.columns = ["1L_pnl"]
 
 # reindexing
 managers_not.index = range(n_months+1)
@@ -95,4 +109,5 @@ managers_PNL.index = range(n_days*n_months+1)
 managers_ret.index = range(n_days*n_months+1)
 managers_cum_PNL = managers_PNL.cumsum()
 
-
+managers_cum_PNL.plot()
+print(pnl_monthly_1L)
